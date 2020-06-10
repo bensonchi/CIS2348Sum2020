@@ -32,6 +32,7 @@ print('Day:', birthday.day)
 print('Year:', birthday.year)
 print('You are',age,'years old.')
 print()
+
 # check if the person's birthday is today
 if (today.month, today.day) == (birthday.month, birthday.day):
 
