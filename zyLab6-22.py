@@ -10,9 +10,9 @@ a2 = int(input())
 b2 = int(input())
 c2 = int(input())
 
-x = 0
-y = 0
 
+result1 = 0
+result2 = 0
 for x in range(-10, 11):
     for y in range(-10, 11):
         result1 = a1*x+b1*y
@@ -20,6 +20,8 @@ for x in range(-10, 11):
         if result1 == c1 and result2 == c2:
             print(x, y)
             break
+    if result1 == c1 and result2 == c2:
         break
+
 else:
     print('No solution')
