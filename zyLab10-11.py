@@ -23,13 +23,15 @@ class FoodItem:  # Define class to contain nutrition information about a food
         print('Number of calories for {:.2f} serving(s): {:.2f}'.format(self.serving, self.get_calories(self.serving)))
 
 
-input_name = input()
-input_fat = float(input())
-input_carbs = float(input())
-input_protein = float(input())
-input_serving = float(input())
-none = FoodItem(serving=input_serving)
-food = FoodItem(input_name, input_fat, input_carbs, input_protein, input_serving)
-none.print_info()
-print()
-food.print_info()
+if __name__ == '__main__':
+    input_name = input()
+    input_fat = float(input())
+    input_carbs = float(input())
+    input_protein = float(input())
+    input_serving = float(input())
+    none = FoodItem(serving=input_serving)
+    food = FoodItem(input_name, input_fat, input_carbs, input_protein, input_serving)
+    none.print_info()
+    print()
+    food.print_info()
+
