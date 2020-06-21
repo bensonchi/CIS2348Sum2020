@@ -18,5 +18,6 @@ class Team:
             print('Team', self.team_name, 'has a losing average.')
 
 
-student_team = Team(input(), int(input()), int(input()))
-student_team.print_result()
+if __name__ == '__main__':
+    student_team = Team(input(), int(input()), int(input()))
+    student_team.print_result()
