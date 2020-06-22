@@ -112,7 +112,7 @@ class ShoppingCart:
 
             elif choice == 'r':
                 print('REMOVE ITEM FROM CART')
-                print('Enter name of item to remove:')
+                print('Enter name of item to remove:\n')
                 remove_item = input()
                 self.remove_item(remove_item)
 
