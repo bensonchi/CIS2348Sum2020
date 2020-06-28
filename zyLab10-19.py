@@ -35,7 +35,6 @@ class ShoppingCart:
         if not found:
             print('Item not found in cart. Nothing removed.\n')
 
-
     def modify_item(self, ItemToPurchase):
         found = False
         print('Enter the new quantity:')
