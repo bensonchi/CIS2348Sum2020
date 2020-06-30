@@ -33,7 +33,7 @@ def read_files():  # read all the csv files and return a list of inventory objec
         for row in service_date_reader:
             sdl_dict[row[0]] = row[1]
 
-    for inventory in inventory_list:
+    for inventory in inventory_list:  # fill the price and service date field in the class
         inventory.price = pl_dict[inventory.item_ID]
         inventory.service_date = sdl_dict[inventory.item_ID]
     inventory_list.sort(key=lambda x: x.manufacturer)
@@ -54,7 +54,7 @@ def write_full_inventory(inv_list):  # function to write FullIntentory csv file.
     count = 1
     type_name = inv_list[0].item_type  # initiate the key for comparison as the first type and initiate count as 1
     for inventory in inv_list:
-        if inventory.item_type != type_name:
+        if inventory.item_type != type_name:d
             count += 1
             type_name = inventory.item_type
     inventory_list.sort(key=lambda x: x.manufacturer)  # return the objects to original order: by manufacture
@@ -82,7 +82,7 @@ def write_type_inventory(inv_list):  # function to write csv files of different 
 def write_past_service_date_inventory(inv_list):  # function to write PastServiceDateInventory.csv file
     today = datetime.date.today()
     with open('PastServiceDateInventory.csv', 'w') as psdi_file:
-        for inv in inventory_list:
+        for inv in inv_list:
             my_list = inv.service_date.split('/')  # convert string to date data type so we can compare with 'today'
             inv_date = datetime.date(int(my_list[2]), int(my_list[0]), int(my_list[1]))
             if today > inv_date:
@@ -90,8 +90,32 @@ def write_past_service_date_inventory(inv_list):  # function to write PastServic
                                                           inv.service_date, inv.damaged))
 
 
+def write_damaged_inventory(inv_list):
+    inventory_list.sort(key=lambda x: x.price, reverse=True)  # sort the list so that more expensive items appear first
+    with open('DamagedInventory.csv', 'w') as di_file:
+        for inv in inv_list:
+            if inv.damaged == 'damaged':
+                di_file.write('{},{},{},{},{}\n'.format(inv.item_ID, inv.manufacturer, inv.item_type, inv.price,
+                                                        inv.service_date))
+
+
+def interactive_query(user_ma, user_it, inv_list):
+    found = False
+    for inv in inv_list:
+        if inv.manufacturer == user_ma and inv.item_type == user_it and inv.service_date<datetime.date.today():
+            print('Your item is:{} {} {} {}'.format(inv.item_ID, inv.manufacturer, inv.item_type, inv.price))
+            found = True
+    if not found:
+        print('No such item in inventory')
+
+
 if __name__ == '__main__':
     inventory_list = read_files()
     write_full_inventory(inventory_list)
     write_type_inventory(inventory_list)
     write_past_service_date_inventory(inventory_list)
+    write_damaged_inventory(inventory_list)
+
+    user_manufacturer = input('Please enter manufacturer name:')
+    user_item_type = input('Please enter item type:')
+    interactive_query(user_manufacturer, user_item_type, inventory_list)
