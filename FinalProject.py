@@ -19,7 +19,8 @@ def read_files():  # read all the csv files and return a list of inventory objec
     with open('ManufacturerList.csv', 'r') as ml_file:
         item_reader = csv.reader(ml_file, delimiter=',')
         for row in item_reader:  # fill the list of Inventory object
-            inventory_list.append(Inventory(item_ID=row[0], manufacturer=row[1], item_type=row[2], damaged=row[3]))
+            inventory_list.append(Inventory(item_ID=row[0].strip(), manufacturer=row[1].strip(),
+                                            item_type=row[2].strip(), damaged=row[3].strip()))
 
     pl_dict = {}  # initiate a dictionary to pair item id with price
     with open('PriceList.csv', 'r') as pl_file:
@@ -48,25 +49,20 @@ def write_full_inventory(inv_list):  # function to write FullIntentory csv file.
                                                        inventory.price, inventory.service_date, inventory.damaged))
 
 
-# returns the total number of different item types, but didn't ended up using
-'''def count_total_types(inv_list):  
-    inventory_list.sort(key=lambda x: x.item_type)  # sort objects by item_type so that same types are together
-    count = 1
-    type_name = inv_list[0].item_type  # initiate the key for comparison as the first type and initiate count as 1
-    for inventory in inv_list:
-        if inventory.item_type != type_name:d
-            count += 1
-            type_name = inventory.item_type
-    inventory_list.sort(key=lambda x: x.manufacturer)  # return the objects to original order: by manufacture
-    return count'''
-
-
 def get_item_types(inv_list):  # function that returns a list of all item types (non-repeating)
     types = []
     for i in inv_list:
         types.append(i.item_type)
     types = list(dict.fromkeys(types))  # removes duplicate from the list
     return types
+
+
+def get_item_manufacturer(inv_list):  # function that returns a list of all manufacturer (non-repeating)
+    manufacturer = []
+    for i in inv_list:
+        manufacturer.append(i.manufacturer)
+    manufacturer = list(dict.fromkeys(manufacturer))  # removes duplicate from the list
+    return manufacturer
 
 
 def write_type_inventory(inv_list):  # function to write csv files of different types' inventory.
@@ -90,8 +86,8 @@ def write_past_service_date_inventory(inv_list):  # function to write PastServic
                                                           inv.service_date, inv.damaged))
 
 
-def write_damaged_inventory(inv_list):
-    inventory_list.sort(key=lambda x: x.price, reverse=True)  # sort the list so that more expensive items appear first
+def write_damaged_inventory(inv_list):  # function for write DamagedInventory.csv file
+    inv_list.sort(key=lambda x: x.price, reverse=True)  # sort the list so that more expensive items appear first
     with open('DamagedInventory.csv', 'w') as di_file:
         for inv in inv_list:
             if inv.damaged == 'damaged':
@@ -99,14 +95,90 @@ def write_damaged_inventory(inv_list):
                                                         inv.service_date))
 
 
-def interactive_query(user_ma, user_it, inv_list):
-    found = False
+def find_max_price(inv_list):
+    # function to find the most expensive item in the list
+    maximum = -1
+    max_object = Inventory()
     for inv in inv_list:
-        if inv.manufacturer == user_ma and inv.item_type == user_it and inv.service_date<datetime.date.today():
-            print('Your item is:{} {} {} {}'.format(inv.item_ID, inv.manufacturer, inv.item_type, inv.price))
-            found = True
-    if not found:
+        if int(inv.price) > maximum:
+            maximum = int(inv.price)
+            max_object = inv
+    return max_object
+
+
+def find_user_item(user_input, inv_list):
+    type_list = get_item_types(inv_list)
+    manufacturer_list = get_item_manufacturer(inv_list)
+    user_str = user_input.split(' ')
+
+    type_counter = 0  # a counter to track how many types appeared in the user string
+    manufacturer_counter = 0  # a counter to track how many manufacturer appeared in the user string
+    user_type = ''  # used to record the user desired item_type
+    user_manufacturer = ''  # used to record the user desired manufacturer
+    manufacturer_available_in_type = False  # indicate whether certain manufacturer has a certain item type
+    user_object_list = []  # used to contain item objects that fits the criteria entered by user
+    today = datetime.date.today()
+    for inv in inv_list:  # remove items that past service date as they will not be considered for output
+        my_list = inv.service_date.split('/')  # convert string to date data type so we can compare with 'today'
+        inv_date = datetime.date(int(my_list[2]), int(my_list[0]), int(my_list[1]))
+        if today > inv_date:
+            inv_list.remove(inv)
+    for inv in inv_list:  # remove items that are damaged as they will not be considered for output
+        if inv.damaged == 'damaged':
+            inv_list.remove(inv)
+
+    for s in user_str:  # iterate through the user string and compare them with types and manufacturers
+        for types in type_list:
+            if s == types:
+                type_counter += 1
+                user_type = types  # record the types entered by the user
+        for manufacturer in manufacturer_list:
+            if s == manufacturer:
+                manufacturer_counter += 1
+                user_manufacturer = manufacturer  # record the manufacturer entered by the user
+
+    for inv in inv_list:
+
+        if inv.manufacturer == user_manufacturer and inv.item_type == user_type:
+            user_object_list.append(inv)
+            manufacturer_available_in_type = True  # check if manufacturer is available for certain item type
+
+    if type_counter != 1 or manufacturer_counter != 1 or not manufacturer_available_in_type:
         print('No such item in inventory')
+
+    elif type_counter == 1 and manufacturer_counter == 1 and manufacturer_available_in_type:
+        # a correct input should contain 1 type and 1 manufacturer and the manufacturer should be available for type
+        best_object = find_max_price(user_object_list)
+        print('Your item is:{} {} {} {}'.format(best_object.item_ID, best_object.manufacturer, best_object.item_type,
+                                                best_object.price))
+        also_consider(best_object.item_type, inv_list, int(best_object.price))
+
+    elif type_counter == 1:
+        also_consider(user_type, inv_list)
+
+
+def also_consider(user_type, inv_list, price=-1):  # function to output 'you should also consider' portion
+    type_list = []
+    object_to_consider = Inventory()  # this is used to contain the recommend item object
+    for inv in inv_list:  # fill type_list with only items that fits the item type specified
+        if inv.item_type == user_type:
+            type_list.append(inv)
+    if price == -1:  # this means that no price is passed to the function, so output the most expensive item in type
+        object_to_consider = find_max_price(type_list)
+        print('Price is:',)
+        print('You may, also, consider: {} {} {} {}'.format(object_to_consider.item_ID,
+                                                            object_to_consider.manufacturer,
+                                                            object_to_consider.item_type, object_to_consider.price))
+    else:
+        type_list.sort(key=lambda x: x.price, reverse=True)  # sort the list depending on price
+        index = 0
+        for types in type_list:
+            if types.price == price:
+                index = type_list.index(types)
+        object_to_consider = type_list[index-1]  # recommend a closely priced item of same type
+        print('You may, also, consider: {} {} {} {}'.format(object_to_consider.item_ID,
+                                                            object_to_consider.manufacturer,
+                                                            object_to_consider.item_type, object_to_consider.price))
 
 
 if __name__ == '__main__':
@@ -116,6 +188,8 @@ if __name__ == '__main__':
     write_past_service_date_inventory(inventory_list)
     write_damaged_inventory(inventory_list)
 
-    user_manufacturer = input('Please enter manufacturer name:')
-    user_item_type = input('Please enter item type:')
-    interactive_query(user_manufacturer, user_item_type, inventory_list)
+    user_entry = input('Please enter what you want to look for:')
+    while user_entry != 'q':
+        find_user_item(user_entry, inventory_list)
+        user_entry = input('Please enter what you want to look for:')
+    print('Good Bye!')
