@@ -117,6 +117,7 @@ def find_user_item(user_input, inv_list):
     user_manufacturer = ''  # used to record the user desired manufacturer
     manufacturer_available_in_type = False  # indicate whether certain manufacturer has a certain item type
     user_object_list = []  # used to contain item objects that fits the criteria entered by user
+    user_type_list = []  # a list of objects that of the user selected type
     today = datetime.date.today()
     for inv in inv_list:  # remove items that past service date as they will not be considered for output
         my_list = inv.service_date.split('/')  # convert string to date data type so we can compare with 'today'
@@ -127,7 +128,7 @@ def find_user_item(user_input, inv_list):
         if inv.damaged == 'damaged':
             inv_list.remove(inv)
 
-    for s in user_str:  # iterate through the user string and compare them with types and manufacturers
+    for s in user_str:  # iterate through the user string and compare each term with types and manufacturers
         for types in type_list:
             if s == types:
                 type_counter += 1
@@ -137,24 +138,29 @@ def find_user_item(user_input, inv_list):
                 manufacturer_counter += 1
                 user_manufacturer = manufacturer  # record the manufacturer entered by the user
 
-    for inv in inv_list:
-
+    for inv in inv_list:  # generate a list of objects that fit both manufacturer and item type
         if inv.manufacturer == user_manufacturer and inv.item_type == user_type:
             user_object_list.append(inv)
-            manufacturer_available_in_type = True  # check if manufacturer is available for certain item type
+            manufacturer_available_in_type = True
 
-    if type_counter != 1 or manufacturer_counter != 1 or not manufacturer_available_in_type:
-        print('No such item in inventory')
-
-    elif type_counter == 1 and manufacturer_counter == 1 and manufacturer_available_in_type:
+    if type_counter == 1 and manufacturer_counter == 1 and manufacturer_available_in_type:
         # a correct input should contain 1 type and 1 manufacturer and the manufacturer should be available for type
         best_object = find_max_price(user_object_list)
         print('Your item is:{} {} {} {}'.format(best_object.item_ID, best_object.manufacturer, best_object.item_type,
                                                 best_object.price))
         also_consider(best_object.item_type, inv_list, int(best_object.price))
 
-    elif type_counter == 1:
+    elif type_counter == 1:  # if correct type is entered once, output the most expensive item in that type
+        for inv in inv_list:  # generate a list of objects that of the type that use chosen
+            if inv.item_type == user_type:
+                user_type_list.append(inv)
+        best_object = find_max_price(user_type_list)
+        print('Your item is:{} {} {} {}'.format(best_object.item_ID, best_object.manufacturer, best_object.item_type,
+                                                best_object.price))
         also_consider(user_type, inv_list)
+
+    else:
+        print('No such item in inventory')
 
 
 def also_consider(user_type, inv_list, price=-1):  # function to output 'you should also consider' portion
@@ -163,9 +169,8 @@ def also_consider(user_type, inv_list, price=-1):  # function to output 'you sho
     for inv in inv_list:  # fill type_list with only items that fits the item type specified
         if inv.item_type == user_type:
             type_list.append(inv)
-    if price == -1:  # this means that no price is passed to the function, so output the most expensive item in type
+    if price == -1:  # this means that no price is not passed to the function, so output the most expensive item in type
         object_to_consider = find_max_price(type_list)
-        print('Price is:',)
         print('You may, also, consider: {} {} {} {}'.format(object_to_consider.item_ID,
                                                             object_to_consider.manufacturer,
                                                             object_to_consider.item_type, object_to_consider.price))
@@ -187,9 +192,11 @@ if __name__ == '__main__':
     write_type_inventory(inventory_list)
     write_past_service_date_inventory(inventory_list)
     write_damaged_inventory(inventory_list)
-
-    user_entry = input('Please enter what you want to look for:')
+    print('\n**************************************************')
+    print('**  Welcome to my Inventory Management System!  **')
+    print('**************************************************\n')
+    user_entry = input('Please enter a item type and manufacturer that you would like to look for ')
     while user_entry != 'q':
         find_user_item(user_entry, inventory_list)
-        user_entry = input('Please enter what you want to look for:')
-    print('Good Bye!')
+        user_entry = input('\nPlease enter a item type and manufacturer that you would like to look for ')
+    print('\n Thank you and good bye!')
